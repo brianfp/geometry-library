@@ -148,10 +148,19 @@ class PolyUtil {
      * is true, and of Rhumb segments otherwise. The polyline is not closed -- the closing
      * segment between the first point and the last point is not included.
      */
-    public static function isLocationOnPath($point, $polyline, $tolerance = self::DEFAULT_TOLERANCE, $geodesic = true) {
+    public static function locationIndexOnPath($point, $polyline, $tolerance = self::DEFAULT_TOLERANCE, $geodesic = true) {
         return self::isLocationOnEdgeOrPath($point, $polyline, false, $geodesic, $tolerance);
-    }    
+    }
     
+    /**
+     * Computes whether the given point lies on or near a polyline, within a specified
+     * tolerance in meters. The polyline is composed of great circle segments if geodesic
+     * is true, and of Rhumb segments otherwise. The polyline is not closed -- the closing
+     * segment between the first point and the last point is not included.
+     */
+    public static function isLocationOnPath($point, $polyline, $tolerance = self::DEFAULT_TOLERANCE, $geodesic = true) {
+        return self::isLocationOnEdgeOrPath($point, $polyline, false, $geodesic, $tolerance) !== false ? true : false;
+    }
     
     private static function isLocationOnEdgeOrPath($point, $poly, $closed, $geodesic, $toleranceEarth) {
         
@@ -170,11 +179,11 @@ class PolyUtil {
         $lng1 = deg2rad($prev['lng']);
         
         if ($geodesic) {
-            foreach($poly as $val) {
+            foreach($poly as $key => $val) {
                 $lat2 = deg2rad($val['lat']);
                 $lng2 = deg2rad($val['lng']);
                 if ( self::isOnSegmentGC($lat1, $lng1, $lat2, $lng2, $lat3, $lng3, $havTolerance)) {
-                    return true;
+                    return $key;
                 }
                 $lat1 = $lat2;
                 $lng1 = $lng2;
@@ -190,7 +199,7 @@ class PolyUtil {
             $y1 = MathUtil::mercator($lat1);
             $y3 = MathUtil::mercator($lat3);
             $xTry = [];
-            foreach($poly as $val) {
+            foreach($poly as $key => $val) {
                 $lat2 = deg2rad($val['lat']);
                 $y2 = MathUtil::mercator($lat2);
                 $lng2 = deg2rad($val['lng']);                
@@ -212,7 +221,7 @@ class PolyUtil {
                         $latClosest = MathUtil::inverseMercator($yClosest);
                         $havDist = MathUtil::havDistance($lat3, $latClosest, $x3 - $xClosest);
                         if ($havDist < $havTolerance) {
-                            return true;
+                            return $key;
                         }
                     }
                 }
